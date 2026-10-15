@@ -1,0 +1,843 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10132b">
+  <title>Orbit — Space Quiz</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      --bg: #f5f5fb;
+      --card: rgba(255, 255, 255, .88);
+      --ink: #1d2040;
+      --muted: #656a80;
+      --line: #e7e8f1;
+      --accent: #7357f5;
+      --accent-dark: #6043e7;
+      --accent-soft: #f0edff;
+      --correct: #11724f;
+      --correct-bg: #e5f8ef;
+      --correct-badge-bg: #d0eee0;
+      --wrong: #b3374b;
+      --wrong-bg: #fff0f1;
+      --wrong-badge-bg: #f9e2e6;
+      --panel-grid: rgba(115, 87, 245, .045);
+      --panel-edge: rgba(115, 87, 245, .22);
+      --hex-line: rgba(115, 87, 245, .12);
+      --online: #11724f;
+      --shadow: 0 24px 70px rgba(37, 34, 83, .12);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #101222;
+        --card: rgba(27, 30, 52, .94);
+        --ink: #f2f1ff;
+        --muted: #a5a8c0;
+        --line: #383b57;
+        --accent: #a493ff;
+        --accent-dark: #b3a7ff;
+        --accent-soft: #302b50;
+        --correct: #69dca7;
+        --correct-bg: #173e35;
+        --correct-badge-bg: #173e35;
+        --wrong: #ff8290;
+        --wrong-bg: #492c3a;
+        --wrong-badge-bg: #492c3a;
+        --panel-grid: rgba(164, 147, 255, .06);
+        --panel-edge: rgba(164, 147, 255, .26);
+        --hex-line: rgba(164, 147, 255, .15);
+        --online: #69dca7;
+        --shadow: 0 24px 70px rgba(0, 0, 0, .32);
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      padding: 38px 20px;
+      display: grid;
+      place-items: center;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse at 18% 12%, rgba(181, 168, 255, .22), transparent 34%),
+        radial-gradient(ellipse at 86% 82%, rgba(112, 211, 219, .17), transparent 32%),
+        var(--bg);
+      font-size: 15px;
+    }
+
+    .app { width: min(100%, 520px); }
+
+    .topline {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 52px;
+      padding: 8px 11px;
+      margin: 0 2px 16px;
+      border: 1px solid var(--panel-edge);
+      border-radius: 13px;
+      background:
+        linear-gradient(var(--panel-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--panel-grid) 1px, transparent 1px),
+        var(--card);
+      background-size: 18px 18px;
+      box-shadow: 0 5px 18px rgba(37, 34, 83, .06), inset 0 1px rgba(255, 255, 255, .48);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 32px;
+      height: 32px;
+      flex: 0 0 32px;
+      place-items: center;
+      border: 1px solid rgba(255, 255, 255, .28);
+      border-radius: 9px;
+      color: white;
+      background: linear-gradient(145deg, #8b70ff, #6043e7);
+      box-shadow: 0 3px 10px rgba(103, 76, 231, .3), inset 0 1px rgba(255, 255, 255, .3);
+      font-size: 16px;
+    }
+
+    .edition {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex: 0 0 auto;
+      padding: 7px 9px;
+      border: 1px solid var(--panel-edge);
+      border-radius: 7px;
+      color: var(--muted);
+      background: color-mix(in srgb, var(--card) 76%, var(--accent-soft));
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .11em;
+      line-height: 1;
+      text-align: right;
+      text-transform: uppercase;
+    }
+
+    .edition::before {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--online);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--online) 16%, transparent), 0 0 8px color-mix(in srgb, var(--online) 55%, transparent);
+      content: "";
+    }
+
+    .card {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      border: 1px solid var(--panel-edge);
+      border-radius: 19px;
+      background:
+        linear-gradient(var(--panel-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--panel-grid) 1px, transparent 1px),
+        var(--card);
+      background-size: 28px 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .card::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0 0 auto;
+      height: 3px;
+      background: linear-gradient(90deg, #8b70ff 0%, #54cbd2 58%, var(--online) 100%);
+      content: "";
+    }
+
+    .card-inner { padding: 25px 32px 32px; }
+
+    .panel-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 17px;
+      margin-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .system-online {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--online);
+    }
+
+    .status-light {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 17%, transparent), 0 0 10px currentColor;
+    }
+
+    .quiz-meta {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 72px;
+      padding: 11px 13px;
+      margin-bottom: 12px;
+      border: 1px solid var(--panel-edge);
+      border-radius: 11px;
+      background-color: var(--card);
+        linear-gradient(90deg, var(--card) 0%, color-mix(in srgb, var(--card) 89%, var(--accent-soft)) 100%);
+      box-shadow: inset 0 1px rgba(255, 255, 255, .45);
+      color: var(--muted);
+    }
+
+    .quiz-meta::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background: var(--hex-line);
+      content: "";
+      pointer-events: none;
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 52 45'%3E%3Cpath d='M13 0 26 7.5v15L13 30 0 22.5v-15L13 0zm26 15 13 7.5v15L39 45 26 37.5v-15L39 15z' fill='none' stroke='black' stroke-width='1'/%3E%3C/svg%3E");
+      -webkit-mask-size: 52px 45px;
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 52 45'%3E%3Cpath d='M13 0 26 7.5v15L13 30 0 22.5v-15L13 0zm26 15 13 7.5v15L39 45 26 37.5v-15L39 15z' fill='none' stroke='black' stroke-width='1'/%3E%3C/svg%3E");
+      mask-size: 52px 45px;
+    }
+
+    .progress-readout {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .meta-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .readout-beacon {
+      width: 6px;
+      height: 6px;
+      flex: 0 0 6px;
+      border-radius: 50%;
+      background: var(--online);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--online) 15%, transparent), 0 0 7px color-mix(in srgb, var(--online) 48%, transparent);
+      animation: beacon-pulse 2.6s ease-in-out infinite;
+    }
+
+    .question-index {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      color: var(--ink);
+      font-size: 22px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -.04em;
+      line-height: 1.15;
+    }
+
+    .question-index-current {
+      color: var(--accent);
+      font-size: 26px;
+    }
+
+    .question-index-total {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .score-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 11px;
+      border: 1px solid color-mix(in srgb, var(--panel-edge) 80%, var(--accent));
+      border-radius: 8px;
+      color: var(--ink);
+      background: color-mix(in srgb, var(--card) 92%, var(--accent-soft));
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .score-pill span { color: #f0a72d; font-size: 14px; }
+
+    .progress-track {
+      height: 10px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: repeating-linear-gradient(
+        90deg,
+        var(--line) 0,
+        var(--line) calc(10% - 2px),
+        transparent calc(10% - 2px),
+        transparent 10%
+      );
+    }
+
+    .progress-fill {
+      width: 10%;
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, #8b70ff, #54cbd2);
+      box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 58%, transparent);
+      transition: width .45s cubic-bezier(.2, .8, .2, 1);
+    }
+
+    .question-area { padding-top: 31px; }
+
+    .category {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 12px;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, p { margin-top: 0; }
+
+    h1 {
+      max-width: 420px;
+      margin-bottom: 25px;
+      font-size: clamp(23px, 5vw, 29px);
+      line-height: 1.24;
+      letter-spacing: -.04em;
+    }
+
+    .answers {
+      display: grid;
+      gap: 10px;
+    }
+
+    .answer {
+      width: 100%;
+      min-height: 57px;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 11px 14px;
+      border: 1.5px solid var(--line);
+      border-radius: 9px;
+      color: var(--ink);
+      background: transparent;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 620;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color .16s, background .16s, transform .16s, box-shadow .16s;
+    }
+
+    .answer:hover:not(:disabled) {
+      transform: translateY(-1px);
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      box-shadow: 0 5px 14px rgba(115, 87, 245, .1);
+    }
+
+    .answer:focus-visible, .next-button:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--accent) 48%, transparent);
+      outline-offset: 3px;
+    }
+
+    .answer:disabled { cursor: default; }
+
+    .answer-letter {
+      flex: 0 0 30px;
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      color: var(--muted);
+      background: var(--accent-soft);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .answer.is-correct {
+      border-color: var(--correct);
+      color: var(--correct);
+      background: var(--correct-bg);
+      animation: pop .38s ease both;
+    }
+
+    .answer.is-wrong {
+      border-color: var(--wrong);
+      color: var(--wrong);
+      background: var(--wrong-bg);
+      animation: shake .4s ease both;
+    }
+
+    .answer.is-correct .answer-letter,
+    .answer.is-wrong .answer-letter {
+      color: currentColor;
+    }
+
+    .answer.is-correct .answer-letter {
+      background: var(--correct-badge-bg);
+    }
+
+    .answer.is-wrong .answer-letter {
+      background: var(--wrong-badge-bg);
+    }
+
+    .feedback {
+      min-height: 24px;
+      margin: 15px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+      line-height: 1.5;
+    }
+
+    .feedback.good { color: var(--correct); }
+    .feedback.bad { color: var(--wrong); }
+
+    .action-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 14px;
+    }
+
+    .next-button, .restart-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      min-height: 46px;
+      padding: 0 19px;
+      border: 0;
+      border-radius: 13px;
+      color: #fff;
+      background: linear-gradient(135deg, #684de0, #5539d4);
+      box-shadow: 0 7px 17px rgba(103, 76, 231, .25);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 750;
+      cursor: pointer;
+      transition: transform .16s, filter .16s;
+    }
+
+    .next-button:hover, .restart-button:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+    }
+
+    .next-button[hidden] { display: none; }
+
+    .footer-note {
+      margin: 16px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .results {
+      padding: 42px 34px 38px;
+      text-align: center;
+      animation: rise .55s cubic-bezier(.2, .8, .2, 1) both;
+    }
+
+    .reaction {
+      width: 94px;
+      height: 94px;
+      display: grid;
+      place-items: center;
+      margin: 0 auto 20px;
+      border: 1px solid var(--line);
+      border-radius: 29px;
+      background: var(--accent-soft);
+      font-size: 48px;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .results-kicker {
+      margin-bottom: 7px;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .results h1 {
+      margin: 0 auto 10px;
+      font-size: 30px;
+    }
+
+    .result-copy {
+      max-width: 345px;
+      margin: 0 auto 25px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .score-result {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 7px;
+      margin-bottom: 25px;
+    }
+
+    .score-result strong {
+      color: var(--accent);
+      font-size: 44px;
+      letter-spacing: -.06em;
+    }
+
+    .score-result span { color: var(--muted); font-size: 14px; font-weight: 650; }
+
+    .restart-button { min-width: 165px; }
+
+    .hidden { display: none !important; }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(.97); }
+      60% { transform: scale(1.025); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-5px); }
+      40%, 80% { transform: translateX(5px); }
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(-3deg); }
+      50% { transform: translateY(-6px) rotate(3deg); }
+    }
+
+    @keyframes beacon-pulse {
+      0%, 100% { opacity: .72; box-shadow: 0 0 0 2px color-mix(in srgb, var(--online) 12%, transparent), 0 0 5px color-mix(in srgb, var(--online) 35%, transparent); }
+      50% { opacity: 1; box-shadow: 0 0 0 4px color-mix(in srgb, var(--online) 18%, transparent), 0 0 9px color-mix(in srgb, var(--online) 62%, transparent); }
+    }
+
+    @media (max-width: 480px) {
+      body { padding: 22px 14px; }
+      .topline { min-height: 48px; padding: 7px 9px; }
+      .edition { padding: 7px; font-size: 9px; letter-spacing: .08em; }
+      .card-inner { padding: 22px 20px 25px; }
+      .panel-status { padding-bottom: 14px; margin-bottom: 16px; }
+      .question-area { padding-top: 26px; }
+      .results { padding: 36px 23px 31px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topline" aria-label="Orbit mission control">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">✦</span> Orbit</div>
+      <span class="edition">Mission control</span>
+    </header>
+
+    <section class="card" aria-label="Space exploration quiz">
+      <div id="quiz-view" class="card-inner">
+        <div class="panel-status">
+          <span class="system-online"><span class="status-light" aria-hidden="true"></span> Systems online</span>
+          <span>Mission log <span aria-hidden="true">/</span> 01</span>
+        </div>
+        <div class="quiz-meta" aria-label="Mission progress and score">
+          <div class="progress-readout" role="status" aria-live="polite" aria-atomic="true">
+            <span class="meta-label"><span class="readout-beacon" aria-hidden="true"></span>Mission progress</span>
+            <span class="question-index" aria-hidden="true"><span id="current-question" class="question-index-current">01</span><span class="question-index-total">/ 10</span></span>
+            <span id="question-count" class="visually-hidden">Question 1 of 10</span>
+          </div>
+          <span class="score-pill" aria-live="polite" aria-atomic="true"><span aria-hidden="true">★</span> Score <b id="score">0</b></span>
+        </div>
+        <div
+          class="progress-track"
+          role="progressbar"
+          aria-label="Quiz progress"
+          aria-valuemin="0"
+          aria-valuemax="10"
+          aria-valuenow="0"
+        >
+          <div id="progress-fill" class="progress-fill"></div>
+        </div>
+        <div class="question-area">
+          <div class="category"><span aria-hidden="true">✧</span> <span id="category"></span></div>
+          <h1 id="question"></h1>
+          <div id="answers" class="answers"></div>
+          <p id="feedback" class="feedback" aria-live="polite"></p>
+          <div class="action-row">
+            <button id="next-button" class="next-button" type="button" hidden>
+              <span id="next-label">Next question</span><span aria-hidden="true">→</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div id="results-view" class="results hidden" aria-live="polite"></div>
+    </section>
+    <p class="footer-note">A little cosmic curiosity goes a long way <span aria-hidden="true">·</span> 2–3 min</p>
+  </main>
+
+  <script>
+    const questions = [
+      {
+        category: "The red planet",
+        question: "Which planet is home to Olympus Mons, the largest volcano in our solar system?",
+        options: ["Venus", "Mars", "Jupiter", "Mercury"],
+        answer: 1,
+        fact: "Mars is home to Olympus Mons, a volcano nearly three times the height of Everest."
+      },
+      {
+        category: "Moon missions",
+        question: "What was the name of the first crewed mission to land humans on the Moon?",
+        options: ["Apollo 8", "Gemini 4", "Apollo 11", "Artemis I"],
+        answer: 2,
+        fact: "Apollo 11 landed Neil Armstrong and Buzz Aldrin on the Moon in July 1969."
+      },
+      {
+        category: "Our solar system",
+        question: "Which planet has the most confirmed moons?",
+        options: ["Saturn", "Neptune", "Uranus", "Earth"],
+        answer: 0,
+        fact: "Saturn leads the moon count, with more than 140 confirmed natural satellites."
+      },
+      {
+        category: "Space technology",
+        question: "What does the Hubble Space Telescope primarily observe?",
+        options: ["The ocean floor", "The universe in visible, ultraviolet and near-infrared light", "Earth's core", "Radio signals only"],
+        answer: 1,
+        fact: "Hubble studies the universe in visible, ultraviolet and near-infrared light from above Earth's atmosphere."
+      },
+      {
+        category: "Star stuff",
+        question: "What is the closest star to Earth after the Sun?",
+        options: ["Sirius", "Proxima Centauri", "Betelgeuse", "Vega"],
+        answer: 1,
+        fact: "Proxima Centauri is about 4.24 light-years away and belongs to the Alpha Centauri system."
+      },
+      {
+        category: "Cosmic distances",
+        question: "What is a light-year a measure of?",
+        options: ["Time", "Brightness", "Distance", "Temperature"],
+        answer: 2,
+        fact: "A light-year is how far light travels in one year: about 9.46 trillion kilometers."
+      },
+      {
+        category: "Exploring Mars",
+        question: "What is the name of NASA's car-sized rover that landed on Mars in 2021?",
+        options: ["Curiosity", "Opportunity", "Perseverance", "Sojourner"],
+        answer: 2,
+        fact: "Perseverance is exploring Jezero Crater and collecting samples for possible return to Earth."
+      },
+      {
+        category: "Beyond the planets",
+        question: "What lies at the center of the Milky Way?",
+        options: ["A giant star cluster", "A supermassive black hole", "A second galaxy", "A planetary nebula"],
+        answer: 1,
+        fact: "The Milky Way's center contains Sagittarius A*, a supermassive black hole."
+      },
+      {
+        category: "Life in space",
+        question: "On which space station have astronauts continuously lived since November 2000?",
+        options: ["Skylab", "Tiangong", "Mir", "The International Space Station"],
+        answer: 3,
+        fact: "The International Space Station has been continuously inhabited since November 2000."
+      },
+      {
+        category: "Deep space",
+        question: "Which spacecraft was the first to enter interstellar space?",
+        options: ["Voyager 1", "Pioneer 10", "New Horizons", "Cassini"],
+        answer: 0,
+        fact: "Voyager 1 crossed into interstellar space in 2012, carrying a message from Earth."
+      }
+    ];
+
+    const letters = ["A", "B", "C", "D"];
+    let current = 0;
+    let score = 0;
+    let answered = false;
+
+    const questionCount = document.querySelector("#question-count");
+    const currentQuestion = document.querySelector("#current-question");
+    const scoreDisplay = document.querySelector("#score");
+    const progress = document.querySelector(".progress-track");
+    const progressFill = document.querySelector("#progress-fill");
+    const category = document.querySelector("#category");
+    const questionTitle = document.querySelector("#question");
+    const answers = document.querySelector("#answers");
+    const feedback = document.querySelector("#feedback");
+    const nextButton = document.querySelector("#next-button");
+    const nextLabel = document.querySelector("#next-label");
+
+    function renderQuestion() {
+      const item = questions[current];
+      answered = false;
+      questionCount.textContent = `Question ${current + 1} of ${questions.length}`;
+      currentQuestion.textContent = String(current + 1).padStart(2, "0");
+      category.textContent = item.category;
+      questionTitle.textContent = item.question;
+      progress.setAttribute("aria-valuenow", String(current));
+      progressFill.style.width = `${(current / questions.length) * 100}%`;
+      feedback.textContent = "";
+      feedback.className = "feedback";
+      nextButton.hidden = true;
+      nextLabel.textContent = current === questions.length - 1 ? "See my results" : "Next question";
+      answers.replaceChildren();
+
+      item.options.forEach((option, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "answer";
+        button.setAttribute("aria-label", `${letters[index]}: ${option}`);
+        button.innerHTML = `<span class="answer-letter" aria-hidden="true">${letters[index]}</span><span>${option}</span>`;
+        button.addEventListener("click", () => selectAnswer(index));
+        answers.append(button);
+      });
+    }
+
+    function selectAnswer(selected) {
+      if (answered) return;
+      answered = true;
+      const item = questions[current];
+      const buttons = [...answers.children];
+      buttons.forEach(button => { button.disabled = true; });
+
+      if (selected === item.answer) {
+        score += 1;
+        scoreDisplay.textContent = String(score);
+        buttons[selected].classList.add("is-correct");
+        feedback.textContent = `Brilliant! ${item.fact}`;
+        feedback.classList.add("good");
+      } else {
+        buttons[selected].classList.add("is-wrong");
+        buttons[item.answer].classList.add("is-correct");
+        feedback.textContent = `Not quite. ${item.fact}`;
+        feedback.classList.add("bad");
+      }
+      nextButton.hidden = false;
+      progress.setAttribute("aria-valuenow", String(current + 1));
+      progressFill.style.width = `${((current + 1) / questions.length) * 100}%`;
+      nextButton.focus({ preventScroll: true });
+    }
+
+    function showResults() {
+      document.querySelector("#quiz-view").classList.add("hidden");
+      const results = document.querySelector("#results-view");
+      let emoji = "🚀";
+      let title = "Ready for liftoff!";
+      let copy = "Every explorer starts with curiosity. Keep looking up and you'll be navigating the cosmos in no time.";
+      if (score >= 9) {
+        emoji = "🌟";
+        title = "Out of this world!";
+        copy = "You really know your cosmic stuff. The universe just got a little less mysterious.";
+      } else if (score >= 7) {
+        emoji = "🪐";
+        title = "Stellar work!";
+        copy = "That's an impressive orbit through the cosmos. You're a space explorer through and through.";
+      } else if (score >= 4) {
+        emoji = "🌙";
+        title = "Nice space strides!";
+        copy = "You made it through the galaxy with a great score. There's always more out there to discover.";
+      }
+
+      results.innerHTML = `
+        <div class="reaction" aria-hidden="true">${emoji}</div>
+        <p class="results-kicker">Mission complete</p>
+        <h1>${title}</h1>
+        <p class="result-copy">${copy}</p>
+        <div class="score-result"><strong>${score}</strong><span>out of ${questions.length} correct</span></div>
+        <button class="restart-button" type="button"><span aria-hidden="true">↻</span> Explore again</button>
+      `;
+      results.classList.remove("hidden");
+      results.querySelector(".restart-button").addEventListener("click", restartQuiz);
+      results.querySelector(".restart-button").focus({ preventScroll: true });
+    }
+
+    function restartQuiz() {
+      current = 0;
+      score = 0;
+      scoreDisplay.textContent = "0";
+      document.querySelector("#results-view").classList.add("hidden");
+      document.querySelector("#quiz-view").classList.remove("hidden");
+      renderQuestion();
+      answers.firstElementChild.focus({ preventScroll: true });
+    }
+
+    nextButton.addEventListener("click", () => {
+      if (current === questions.length - 1) {
+        showResults();
+      } else {
+        current += 1;
+        renderQuestion();
+        answers.firstElementChild.focus({ preventScroll: true });
+      }
+    });
+
+    renderQuestion();
+  </script>
+</body>
+</html>
