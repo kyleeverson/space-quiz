@@ -531,6 +531,54 @@
 
     .score-result span { color: var(--muted); font-size: 14px; font-weight: 650; }
 
+    .review-section {
+      margin: 0 0 25px;
+      text-align: left;
+    }
+
+    .review-section h2 {
+      margin: 0 0 11px;
+      color: var(--ink);
+      font-size: 16px;
+      letter-spacing: -.02em;
+    }
+
+    .review-list {
+      display: grid;
+      gap: 9px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    .review-item {
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: color-mix(in srgb, var(--card) 86%, var(--accent-soft));
+    }
+
+    .review-question {
+      margin: 0 0 9px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .review-answer {
+      display: flex;
+      gap: 5px;
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .review-answer strong { flex: 0 0 auto; }
+    .review-your-answer strong { color: var(--wrong); }
+    .review-correct-answer strong { color: var(--correct); }
+
     .restart-button { min-width: 165px; }
 
     .hidden { display: none !important; }
@@ -720,6 +768,7 @@
     let current = 0;
     let score = 0;
     let answered = false;
+    let missedAnswers = [];
 
     const questionCount = document.querySelector("#question-count");
     const currentQuestion = document.querySelector("#current-question");
@@ -773,6 +822,12 @@
         feedback.textContent = `Brilliant! ${item.fact}`;
         feedback.classList.add("good");
       } else {
+        missedAnswers.push({
+          questionNumber: current + 1,
+          question: item.question,
+          selectedAnswer: item.options[selected],
+          correctAnswer: item.options[item.answer]
+        });
         buttons[selected].classList.add("is-wrong");
         buttons[item.answer].classList.add("is-correct");
         feedback.textContent = `Not quite. ${item.fact}`;
@@ -812,6 +867,49 @@
         <div class="score-result"><strong>${score}</strong><span>out of ${questions.length} correct</span></div>
         <button class="restart-button" type="button"><span aria-hidden="true">↻</span> Explore again</button>
       `;
+      if (missedAnswers.length > 0) {
+        const review = document.createElement("section");
+        review.className = "review-section";
+        review.setAttribute("aria-label", "Review missed questions");
+
+        const heading = document.createElement("h2");
+        heading.textContent = "Review missed questions";
+        review.append(heading);
+
+        const list = document.createElement("ol");
+        list.className = "review-list";
+        missedAnswers.forEach(missed => {
+          const item = document.createElement("li");
+          item.className = "review-item";
+
+          const question = document.createElement("p");
+          question.className = "review-question";
+          question.textContent = `Q${missed.questionNumber}. ${missed.question}`;
+          item.append(question);
+
+          const selectedAnswer = document.createElement("p");
+          selectedAnswer.className = "review-answer review-your-answer";
+          const selectedLabel = document.createElement("strong");
+          selectedLabel.textContent = "Your answer:";
+          const selectedText = document.createElement("span");
+          selectedText.textContent = missed.selectedAnswer;
+          selectedAnswer.append(selectedLabel, selectedText);
+          item.append(selectedAnswer);
+
+          const correctAnswer = document.createElement("p");
+          correctAnswer.className = "review-answer review-correct-answer";
+          const correctLabel = document.createElement("strong");
+          correctLabel.textContent = "Correct answer:";
+          const correctText = document.createElement("span");
+          correctText.textContent = missed.correctAnswer;
+          correctAnswer.append(correctLabel, correctText);
+          item.append(correctAnswer);
+
+          list.append(item);
+        });
+        review.append(list);
+        results.querySelector(".score-result").after(review);
+      }
       results.classList.remove("hidden");
       results.querySelector(".restart-button").addEventListener("click", restartQuiz);
       results.querySelector(".restart-button").focus({ preventScroll: true });
@@ -820,8 +918,11 @@
     function restartQuiz() {
       current = 0;
       score = 0;
+      missedAnswers = [];
       scoreDisplay.textContent = "0";
-      document.querySelector("#results-view").classList.add("hidden");
+      const results = document.querySelector("#results-view");
+      results.classList.add("hidden");
+      results.replaceChildren();
       document.querySelector("#quiz-view").classList.remove("hidden");
       renderQuestion();
       answers.firstElementChild.focus({ preventScroll: true });
