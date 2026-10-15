@@ -298,6 +298,13 @@
 
     .score-pill span { color: #f0a72d; font-size: 14px; }
 
+    .score-pills {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
     .progress-track {
       height: 10px;
       overflow: hidden;
@@ -517,10 +524,14 @@
 
     .score-result {
       display: flex;
-      align-items: baseline;
       justify-content: center;
-      gap: 7px;
+      gap: 24px;
       margin-bottom: 25px;
+    }
+
+    .score-result-item {
+      display: grid;
+      gap: 3px;
     }
 
     .score-result strong {
@@ -529,7 +540,7 @@
       letter-spacing: -.06em;
     }
 
-    .score-result span { color: var(--muted); font-size: 14px; font-weight: 650; }
+    .score-result span { color: var(--muted); font-size: 13px; font-weight: 650; }
 
     .review-section {
       margin: 0 0 25px;
@@ -661,7 +672,10 @@
             <span class="question-index" aria-hidden="true"><span id="current-question" class="question-index-current">01</span><span class="question-index-total">/ 10</span></span>
             <span id="question-count" class="visually-hidden">Question 1 of 10</span>
           </div>
-          <span class="score-pill" aria-live="polite" aria-atomic="true"><span aria-hidden="true">★</span> Score <b id="score">0</b></span>
+          <div class="score-pills">
+            <span class="score-pill" aria-live="polite" aria-atomic="true"><span aria-hidden="true">★</span> Score <b id="score">0</b></span>
+            <span class="score-pill"><span aria-hidden="true">🏆</span> Personal best <b id="personal-best">0</b></span>
+          </div>
         </div>
         <div
           class="progress-track"
@@ -773,6 +787,7 @@
     const questionCount = document.querySelector("#question-count");
     const currentQuestion = document.querySelector("#current-question");
     const scoreDisplay = document.querySelector("#score");
+    const personalBestDisplay = document.querySelector("#personal-best");
     const progress = document.querySelector(".progress-track");
     const progressFill = document.querySelector("#progress-fill");
     const category = document.querySelector("#category");
@@ -781,6 +796,28 @@
     const feedback = document.querySelector("#feedback");
     const nextButton = document.querySelector("#next-button");
     const nextLabel = document.querySelector("#next-label");
+    const personalBestStorageKey = "spaceQuizPersonalBest";
+
+    function loadPersonalBest() {
+      try {
+        const stored = window.localStorage.getItem(personalBestStorageKey);
+        const value = Number(stored);
+        return stored !== null && Number.isInteger(value) && value >= 0 && value <= questions.length ? value : 0;
+      } catch {
+        return 0;
+      }
+    }
+
+    function savePersonalBest(value) {
+      try {
+        window.localStorage.setItem(personalBestStorageKey, String(value));
+      } catch {
+        // Storage can be unavailable; keep the score for this page session.
+      }
+    }
+
+    let personalBest = loadPersonalBest();
+    personalBestDisplay.textContent = String(personalBest);
 
     function renderQuestion() {
       const item = questions[current];
@@ -842,6 +879,11 @@
     function showResults() {
       document.querySelector("#quiz-view").classList.add("hidden");
       const results = document.querySelector("#results-view");
+      if (score > personalBest) {
+        personalBest = score;
+        savePersonalBest(personalBest);
+        personalBestDisplay.textContent = String(personalBest);
+      }
       let emoji = "🚀";
       let title = "Ready for liftoff!";
       let copy = "Every explorer starts with curiosity. Keep looking up and you'll be navigating the cosmos in no time.";
@@ -864,7 +906,10 @@
         <p class="results-kicker">Mission complete</p>
         <h1>${title}</h1>
         <p class="result-copy">${copy}</p>
-        <div class="score-result"><strong>${score}</strong><span>out of ${questions.length} correct</span></div>
+        <div class="score-result">
+          <div class="score-result-item"><strong>${score}</strong><span>Your score</span></div>
+          <div class="score-result-item"><strong>${personalBest}</strong><span>Personal best</span></div>
+        </div>
         <button class="restart-button" type="button"><span aria-hidden="true">↻</span> Explore again</button>
       `;
       if (missedAnswers.length > 0) {
