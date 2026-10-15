@@ -48,6 +48,10 @@ class Element {
   querySelector(selector) {
     return this.queries?.[selector];
   }
+
+  querySelectorAll(selector) {
+    return this.queryLists?.[selector] ?? [];
+  }
 }
 
 const source = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
@@ -60,9 +64,12 @@ function startQuiz(storage) {
     "#feedback", "#next-button", "#next-label", "#quiz-view", "#results-view"
   ];
   const elements = Object.fromEntries(selectors.map(selector => [selector, new Element()]));
+  const replayButtons = [new Element(), new Element()];
   elements["#results-view"].queries = {
     ".score-result": new Element(),
-    ".restart-button": new Element()
+  };
+  elements["#results-view"].queryLists = {
+    ".restart-button": replayButtons
   };
   const document = {
     querySelector: selector => elements[selector],
